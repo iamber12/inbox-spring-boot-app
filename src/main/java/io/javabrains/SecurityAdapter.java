@@ -35,7 +35,8 @@ public class SecurityAdapter {
 				.logout(l -> l
 						.logoutSuccessUrl("/").permitAll()
 				)
-				.oauth2Login(Customizer.withDefaults());
+				.oauth2Login(oauth2Login -> oauth2Login
+						.loginPage("/oauth2/authorization/github"));
 
 		return http.build();
 	}
