@@ -1,11 +1,14 @@
 package io.javabrains;
 
 import com.datastax.oss.driver.api.core.uuid.Uuids;
+import io.javabrains.inbox.email.Email;
+import io.javabrains.inbox.email.EmailRepository;
 import io.javabrains.inbox.emailList.EmailListItem;
 import io.javabrains.inbox.emailList.EmailListItemKey;
 import io.javabrains.inbox.emailList.EmailListItemRepository;
 import io.javabrains.inbox.folders.Folder;
 import io.javabrains.inbox.folders.FolderRepository;
+import io.javabrains.inbox.folders.UnreadEmailStatsRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -31,6 +34,12 @@ public class InboxApp {
     @Autowired
     EmailListItemRepository emailListItemRepository;
 
+    @Autowired
+    private EmailRepository emailRepository;
+
+    @Autowired
+    private UnreadEmailStatsRepository unreadEmailStatsRepository;
+
     public static void main(String[] args) {
         SpringApplication.run(InboxApp.class, args);
     }
@@ -47,6 +56,10 @@ public class InboxApp {
         folderRepository.save(new Folder("iamber12", "Sent", "green"));
         folderRepository.save(new Folder("iamber12", "Important", "yellow"));
 
+        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
+        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
+        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
+
         for(int i=0; i<10; i++) {
             EmailListItemKey key = new EmailListItemKey();
             key.setUserId("iamber12");
@@ -60,6 +73,15 @@ public class InboxApp {
             item.setUnread(true);
 
             emailListItemRepository.save(item);
+
+            Email email = new Email();
+            email.setId(key.getTimeUUID());
+            email.setFrom("iamber12");
+            email.setSubject(item.getSubject());
+            email.setBody("Body " + i);
+            email.setTo(item.getTo());
+
+            emailRepository.save(email);
         }
     }
 }
