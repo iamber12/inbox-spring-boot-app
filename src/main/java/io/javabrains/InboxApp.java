@@ -3,6 +3,7 @@ package io.javabrains;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import io.javabrains.inbox.email.Email;
 import io.javabrains.inbox.email.EmailRepository;
+import io.javabrains.inbox.email.EmailService;
 import io.javabrains.inbox.emailList.EmailListItem;
 import io.javabrains.inbox.emailList.EmailListItemKey;
 import io.javabrains.inbox.emailList.EmailListItemRepository;
@@ -40,6 +41,9 @@ public class InboxApp {
     @Autowired
     private UnreadEmailStatsRepository unreadEmailStatsRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     public static void main(String[] args) {
         SpringApplication.run(InboxApp.class, args);
     }
@@ -52,36 +56,12 @@ public class InboxApp {
 
     @PostConstruct
     public void init() {
-        folderRepository.save(new Folder("iamber12", "Inbox", "blue"));
-        folderRepository.save(new Folder("iamber12", "Sent", "green"));
-        folderRepository.save(new Folder("iamber12", "Important", "yellow"));
-
-        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
-        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
-        unreadEmailStatsRepository.incrementUnreadCount("iamber12", "Inbox");
+        folderRepository.save(new Folder("iamber12", "Work", "blue"));
+        folderRepository.save(new Folder("iamber12", "Home", "green"));
+        folderRepository.save(new Folder("iamber12", "Masters", "yellow"));
 
         for(int i=0; i<10; i++) {
-            EmailListItemKey key = new EmailListItemKey();
-            key.setUserId("iamber12");
-            key.setLabel("Inbox");
-            key.setTimeUUID(Uuids.timeBased());
-
-            EmailListItem item = new EmailListItem();
-            item.setKey(key);
-            item.setTo(Arrays.asList("iamber12"));
-            item.setSubject("Subject " + i);
-            item.setUnread(true);
-
-            emailListItemRepository.save(item);
-
-            Email email = new Email();
-            email.setId(key.getTimeUUID());
-            email.setFrom("iamber12");
-            email.setSubject(item.getSubject());
-            email.setBody("Body " + i);
-            email.setTo(item.getTo());
-
-            emailRepository.save(email);
+            emailService.sendEmail("iamber12", Arrays.asList("iamber12", "testing-id1"), "Testing " + i, "Testing body");
         }
     }
 }

@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.uuid.Uuids;
 import io.javabrains.inbox.emailList.EmailListItem;
 import io.javabrains.inbox.emailList.EmailListItemKey;
 import io.javabrains.inbox.emailList.EmailListItemRepository;
+import io.javabrains.inbox.folders.UnreadEmailStatsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,8 @@ public class EmailService {
     @Autowired
     EmailListItemRepository emailListItemRepository;
 
+    @Autowired
+    UnreadEmailStatsRepository unreadEmailStatsRepository;
 
     public void sendEmail(String from, List<String> to, String subject, String body) {
         Email email = new Email();
@@ -31,10 +34,27 @@ public class EmailService {
         to.forEach(toId -> {
             EmailListItem emailListItem = createEmailListItem(to, subject, toId, email, "Inbox");
             emailListItemRepository.save(emailListItem);
+            unreadEmailStatsRepository.incrementUnreadCount(toId, "Inbox");
         });
 
         EmailListItem sentEmailListItem = createEmailListItem(to, subject, from, email, "Sent");
+        sentEmailListItem.setUnread(false);
         emailListItemRepository.save(sentEmailListItem);
+    }
+
+    public boolean hasAccess(Email email, String userId) {
+        return userId.equals(email.getFrom()) || email.getTo().contains(userId);
+    }
+
+    public String getReplySubject(String subject) {
+        return "Re: " + subject;
+    }
+
+    public String getReplyBody(Email email) {
+        return "\n\n\n----------------------------------------- \n" +
+                "From: " + email.getFrom() + "\n" +
+                "To: " + email.getTo() + "\n\n" +
+                email.getBody();
     }
 
     private EmailListItem createEmailListItem(List<String> to, String subject, String itemOwner, Email email, String folder) {

@@ -4,9 +4,7 @@ import com.datastax.oss.driver.api.core.uuid.Uuids;
 import io.javabrains.inbox.email.EmailRepository;
 import io.javabrains.inbox.emailList.EmailListItem;
 import io.javabrains.inbox.emailList.EmailListItemRepository;
-import io.javabrains.inbox.folders.Folder;
-import io.javabrains.inbox.folders.FolderRepository;
-import io.javabrains.inbox.folders.FolderService;
+import io.javabrains.inbox.folders.*;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 public class InboxController {
@@ -32,6 +31,9 @@ public class InboxController {
     @Autowired
     private EmailListItemRepository emailListItemRepository;
 
+    @Autowired
+    private UnreadEmailStatsRepository unreadEmailStatsRepository;
+
     @GetMapping(value="/")
     public String homePage(@RequestParam(required = false) String folder, @AuthenticationPrincipal OAuth2User principal, Model model) {
         if (principal == null || !StringUtils.hasText(principal.getAttribute("login"))) {
@@ -43,13 +45,14 @@ public class InboxController {
         String userId = principal.getAttribute("login");
         List<Folder> userFolders = folderRepository.findAllByUserId(userId);
         model.addAttribute("userFolders", userFolders);
+        model.addAttribute("username", principal.getAttribute("name"));
 
         List<Folder> defaultFolders = folderService.fetchDefaultFolders(userId);
         model.addAttribute("defaultFolders", defaultFolders);
 
         // Fetch messages
-        String folderlabel = StringUtils.hasText(folder) ? folder: "Inbox";
-        List<EmailListItem> emailList = emailListItemRepository.findAllByKey_UserIdAndKey_Label(userId, folderlabel);
+        folder = StringUtils.hasText(folder) ? folder: "Inbox";
+        List<EmailListItem> emailList = emailListItemRepository.findAllByKey_UserIdAndKey_Label(userId, folder);
         PrettyTime p = new PrettyTime();
 
         emailList.stream().forEach(emailListItem -> {
@@ -59,7 +62,8 @@ public class InboxController {
         });
 
         model.addAttribute("emailList", emailList);
-        model.addAttribute("folderName", folderlabel);
+        model.addAttribute("folderName", folder);
+        model.addAttribute("stats", folderService.mapCountToLabels(userId));
 
         return "inbox-page";
     }

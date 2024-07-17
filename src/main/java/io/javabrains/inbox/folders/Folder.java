@@ -24,4 +24,5 @@ public class Folder {
     @CassandraType(type= CassandraType.Name.TEXT)
     private String color;
 
+
 }

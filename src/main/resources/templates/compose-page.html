@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6" xmlns="http://www.w3.org/1999/html">
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -51,38 +51,45 @@
 <body>
 <div class="container">
     <header>
-        <h3>
-            Inbox App <br>
-            <small class="text-muted" th:text="'Hello, ' + ${username}">User Name</small>
-        </h3>
+        <header>
+            <h3>
+                Inbox App <br>
+                <small class="text-muted" th:text="'Hello, ' + ${username}">User Name</small>
+            </h3>
+        </header>
     </header>
 
     <nav>
-        <div class="card">
-            <a href="/compose" class="btn btn-primary">Compose Message</a>
-        </div>
         <div th:insert="components/folder-list :: folder-list (panelName = 'Default Folders', folders= ${defaultFolders})"></div>
         <div th:insert="components/folder-list :: folder-list (panelName = 'User Folders', folders= ${userFolders})"></div>
     </nav>
 
     <main>
-        <div class="card" th:if="${emailList}">
-            <div th:text="${folderName}" class="card-header">
-                Folder Name
+        <div class="card">
+            <div class="card-header">
+                Create Email
             </div>
-            <div class="card-body">
-                <div class="list-group">
-                    <a th:each="message : ${emailList}" th:href="@{'/emails/' + ${message.key.timeUUID} + '?folder=' + ${folderName}} "
-                       class="list-group-item list-group-item-action"
-                        th:classappend="${message.isUnread()} ? '': 'list-group-item-dark'">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1" th:text="${message.subject}">Subject</h5>
-                            <small th:text="${message.agoTimeString}"></small>
-                        </div>
-                        <p class="mb-1" th:text="${message.to}">To</p>
-                    </a>
-                </div>
-            </div>
+            <dl class="card-body">
+                <form th:attr="action=@{/sendEmail}" method="POST">
+                    <input type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}"/>
+                    <div class="mb-3">
+                        <label for="toIds" class="form-label">To</label>
+                        <input type="text" class="form-control" id="toIds" name="toIds" th:value="${toIds}" aria-describedby="emailHelp"></input>
+                        <div id="toIdHelp" class="form-text">Enter Github IDs separated by commas</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" name="subject" class="form-control" th:value="${subject}" id="subject">
+                    </div>
+                    <div class="mb-3">
+                        <label for="body" class="form-label">Subject</label>
+                        <textarea rows="10" type="text" class="form-control" th:text="${body}" name="body" id="body"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </dl>
         </div>
     </main>
 

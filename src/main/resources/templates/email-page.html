@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6" xmlns="http://www.w3.org/1999/html">
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -46,6 +46,10 @@
         footer {
             grid-area: footer;
         }
+
+        .body-text {
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -66,21 +70,28 @@
     </nav>
 
     <main>
-        <div class="card" th:if="${emailList}">
-            <div th:text="${folderName}" class="card-header">
-                Folder Name
+        <div class="card">
+            <div class="card-header">
+                View Email
             </div>
             <div class="card-body">
-                <div class="list-group">
-                    <a th:each="message : ${emailList}" th:href="@{'/emails/' + ${message.key.timeUUID} + '?folder=' + ${folderName}} "
-                       class="list-group-item list-group-item-action"
-                        th:classappend="${message.isUnread()} ? '': 'list-group-item-dark'">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1" th:text="${message.subject}">Subject</h5>
-                            <small th:text="${message.agoTimeString}"></small>
-                        </div>
-                        <p class="mb-1" th:text="${message.to}">To</p>
-                    </a>
+                <dl>
+                    <dt>From</dt>
+                    <dd th:text="${email.from}"></dd>
+                    <dt>To</dt>
+                    <dd th:text="${toIds}"></dd>
+                    <dt>Subject</dt>
+                    <dd th:text="${email.subject}"></dd>
+                    <dt>Body</dt>
+                    <dd class="body-text" th:text="${email.body}"></dd>
+                </dl>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a class="btn btn-primary me-md-2"
+                       th:href="@{'/compose?to='+${email.from}+'&id=' + ${email.getId()}}"
+                       type="button">Reply</a>
+                    <a class="btn btn-primary"
+                       th:href="@{'/compose?to='+${toIds} + ',' + ${email.from} +'&id=' + ${email.getId()}}"
+                       type="button">Reply All</a>
                 </div>
             </div>
         </div>

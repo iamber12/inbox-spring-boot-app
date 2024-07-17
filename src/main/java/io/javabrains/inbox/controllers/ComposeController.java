@@ -1,5 +1,7 @@
 package io.javabrains.inbox.controllers;
 
+import io.javabrains.inbox.email.Email;
+import io.javabrains.inbox.email.EmailRepository;
 import io.javabrains.inbox.email.EmailService;
 import org.springframework.ui.Model;
 import io.javabrains.inbox.folders.Folder;
@@ -30,8 +32,11 @@ public class ComposeController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private EmailRepository emailRepository;
+
     @GetMapping(value="/compose")
-    public String getComposePage(@RequestParam(required = false) String to, @AuthenticationPrincipal OAuth2User principal, Model model) {
+    public String getComposePage(@RequestParam(required = false) String to, @RequestParam(required = false) UUID id, @AuthenticationPrincipal OAuth2User principal, Model model) {
         if (principal == null || !StringUtils.hasText(principal.getAttribute("login"))) {
             return "index";
         }
@@ -44,9 +49,22 @@ public class ComposeController {
         List<Folder> defaultFolders = folderService.fetchDefaultFolders(userId);
         model.addAttribute("defaultFolders", defaultFolders);
 
+        // Fetch Email to prepopulate information while replying
+        Optional<Email> optionalEmail = emailRepository.findById(id);
+        if (optionalEmail.isPresent()) {
+            Email email = optionalEmail.get();
+            if(!emailService.hasAccess(email, userId)) {
+                return "redirect:/";
+            }
+            model.addAttribute("subject", emailService.getReplySubject(email.getSubject()));
+            model.addAttribute("body", emailService.getReplyBody(email));
+        }
+
         List<String> toIds = getStringSet(to);
 
         model.addAttribute("toIds", String.join(", ", toIds));
+        model.addAttribute("stats", folderService.mapCountToLabels(userId));
+        model.addAttribute("username", principal.getAttribute("name"));
 
         return "compose-page";
     }
